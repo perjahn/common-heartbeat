@@ -2,7 +2,7 @@
 {
     public static class HeartbeatOptionsExtensions
     {
-        public static HeartbeatOptions AddApiKey(this HeartbeatOptions options, string apiKey)
+        public static HeartbeatOptions SetApiKey(this HeartbeatOptions options, string apiKey)
         {
             options.ApiKey = apiKey;
             return options;
