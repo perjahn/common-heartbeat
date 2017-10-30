@@ -8,9 +8,9 @@
     <Description></Description>
     <RepositoryType>git</RepositoryType>
     <Version>1.0.0</Version>
-    <RepositoryUrl>https://github.com/collector-bank/common-heartbeat-aspnetcore</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/collector-bank/common-heartbeat-aspnetcore</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/collector-bank/common-heartbeat-aspnetcore/master/icon.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/collector-bank/common-heartbeat</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/collector-bank/common-heartbeat</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/collector-bank/common-heartbeat/master/icon.png</PackageIconUrl>
     <Product />
   </PropertyGroup>
 
@@ -19,7 +19,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
-    <PackageReference Include="Serilog" Version="2.5.0" />
   </ItemGroup>
 
 </Project>

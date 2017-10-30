@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
-using Serilog.Context;
+using Microsoft.Extensions.Logging;
 
 namespace Collector.Common.Heartbeat
 {
@@ -20,13 +21,13 @@ namespace Collector.Common.Heartbeat
         /// Creates a new instance of <see cref="T:Collector.Common.Heartbeat.HeartbeatMiddleware" />
         /// </summary>
         /// <param name="next">The delegate representing the next middleware in the request pipeline.</param>
-        /// <param name="logger">The Logger of <see cref="Serilog.ILogger"/>.</param>
+        /// <param name="loggerFactory">The Logger to use.</param>
         /// <param name="options">The middleware options.</param>
         /// <param name="healthCheckFunc">The <see cref="Func{T, TResult}"/> to excute on <see cref="T"/>.</param>
-        public HeartbeatMiddleware(RequestDelegate next, ILogger logger, HeartbeatOptions options, Func<T, Task> healthCheckFunc)
+        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task> healthCheckFunc)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T>)) ?? throw new ArgumentNullException(nameof(loggerFactory));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _healthCheckFunc = healthCheckFunc ?? throw new ArgumentNullException(nameof(healthCheckFunc));
         }
@@ -38,7 +39,8 @@ namespace Collector.Common.Heartbeat
         {
             if (httpContext == null)
                 throw new ArgumentNullException(nameof(httpContext));
-            if (IsHttpGet(httpContext))
+
+            if (httpContext.Request.Method.Equals(HttpMethod.Get.Method, StringComparison.OrdinalIgnoreCase))
             {
                 await InvokeHeartbeat(httpContext);
             }
@@ -48,18 +50,14 @@ namespace Collector.Common.Heartbeat
             }
         }
 
-        private static bool IsHttpGet(HttpContext httpContext)
-        {
-            return httpContext.Request.Method.ToUpperInvariant().Equals("GET");
-        }
         private async Task InvokeHeartbeat(HttpContext httpContext)
         {
-            var actualKey = httpContext.Request.Headers[_options.ApiKeyHeaderKey];
-            if (IsAuthorizedRequest(_options.ApiKey, actualKey))
+            using (_logger.BeginScope(new Dictionary<string, object> { ["Heartbeat"] = true }))
             {
-                var healthCheckMonitor = httpContext.RequestServices.GetService<T>();
-                using (LogContext.PushProperty("Heartbeat", true))
+                var actualKey = httpContext.Request.Headers[_options.ApiKeyHeaderKey];
+                if (IsAuthorizedRequest(_options.ApiKey, actualKey))
                 {
+                    var healthCheckMonitor = httpContext.RequestServices.GetService<T>();
                     var statusCode = HttpStatusCode.OK;
                     var watch = System.Diagnostics.Stopwatch.StartNew();
                     try
@@ -68,20 +66,20 @@ namespace Collector.Common.Heartbeat
                         {
                             await _healthCheckFunc.Invoke(healthCheckMonitor);
                         }
-                        _logger.Information("Heartbeat API call returned success. Test took {ExecutionTime} ms.", watch.ElapsedMilliseconds);
+                        _logger.LogInformation("Heartbeat API call returned success. Test took {ExecutionTime} ms.", watch.ElapsedMilliseconds);
                     }
                     catch (Exception error)
                     {
-                        _logger.Warning("Heartbeat API call returned failure. Exception message was {ExceptionMessage}", error.Message);
+                        _logger.LogError("Heartbeat API call returned failure. Exception message was {ExceptionMessage}", error.Message);
                         statusCode = HttpStatusCode.InternalServerError;
                     }
                     watch.Stop();
                     httpContext.Response.StatusCode = (int)statusCode;
                 }
-            }
-            else
-            {
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                else
+                {
+                    httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                }
             }
         }
 
