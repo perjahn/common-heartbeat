@@ -5,6 +5,10 @@ VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Collector.Common.Heartbeat", "src\Collector.Common.Heartbeat\Collector.Common.Heartbeat.csproj", "{2D67FCD5-850B-4A74-B55E-917BCCEB4533}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{5CF221C5-A816-4A92-92DE-3892F798B382}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HeartbeatExample", "examples\HeartbeatExample\HeartbeatExample.csproj", "{27E1622E-F131-4CE4-9AD1-36160A2D9E49}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{2D67FCD5-850B-4A74-B55E-917BCCEB4533}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D67FCD5-850B-4A74-B55E-917BCCEB4533}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D67FCD5-850B-4A74-B55E-917BCCEB4533}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27E1622E-F131-4CE4-9AD1-36160A2D9E49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27E1622E-F131-4CE4-9AD1-36160A2D9E49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27E1622E-F131-4CE4-9AD1-36160A2D9E49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27E1622E-F131-4CE4-9AD1-36160A2D9E49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{27E1622E-F131-4CE4-9AD1-36160A2D9E49} = {5CF221C5-A816-4A92-92DE-3892F798B382}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B7596910-8310-402C-A8C7-48DB606A5336}
