@@ -13,7 +13,7 @@ namespace Collector.Common.Heartbeat
         /// <param name="options">Options for heartbeat.</param>
         public static IApplicationBuilder UseHeartbeat(this IApplicationBuilder applicationBuilder, HeartbeatOptions options = null)
         {
-            return applicationBuilder.UseHeartbeat<IHeartbeatMonitor>(monitor => monitor.RunHealthCheckAsync(), options);
+            return applicationBuilder.UseHeartbeat<IHeartbeatMonitor>(monitor => monitor.RunAsync(), options);
         }
 
         /// <summary>

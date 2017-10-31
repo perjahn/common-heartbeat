@@ -5,9 +5,9 @@ namespace Collector.Common.Heartbeat
     public interface ISupportsDiagnostics
     {
         /// <summary>
-        /// Check the healthy of the component/service. Should throw exception if check fails.
+        /// Check the health of the component.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A task that represents the execution of this middleware.</returns>
         Task PerformHealthCheckAsync();
     }
 }

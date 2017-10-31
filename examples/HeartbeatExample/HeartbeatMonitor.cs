@@ -12,7 +12,7 @@ namespace HeartbeatExample
         {
             _logger = logger.CreateLogger<HeartbeatMonitor>();
         }
-        public Task RunHealthCheckAsync()
+        public Task RunAsync()
         {
             _logger.LogInformation("Doint stuff");
             return Task.CompletedTask;

@@ -4,6 +4,6 @@ namespace Collector.Common.Heartbeat
 {
     public interface IHeartbeatMonitor
     {
-        Task RunHealthCheckAsync();
+        Task RunAsync();
     }
 }
