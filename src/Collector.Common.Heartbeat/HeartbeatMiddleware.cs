@@ -12,6 +12,8 @@ namespace Collector.Common.Heartbeat
     /// <summary>Represents a middleware that handle heartbeats</summary>
     public class HeartbeatMiddleware<T>
     {
+        private const string HeartbeatScope = "Heartbeat";
+        private const string ExecutionTimeScope = "ExecutionTime";
         private readonly Func<T, Task> _healthCheckFunc;
         private readonly RequestDelegate _next;
         private readonly HeartbeatOptions _options;
@@ -52,29 +54,38 @@ namespace Collector.Common.Heartbeat
 
         private async Task InvokeHeartbeat(HttpContext httpContext)
         {
-            using (_logger.BeginScope(new Dictionary<string, object> { ["Heartbeat"] = true }))
+            using (_logger.BeginScope(new Dictionary<string, object> { { HeartbeatScope, true } }))
             {
                 var actualKey = httpContext.Request.Headers[_options.ApiKeyHeaderKey];
                 if (IsAuthorizedRequest(_options.ApiKey, actualKey))
                 {
-                    var healthCheckMonitor = httpContext.RequestServices.GetService<T>();
-                    var statusCode = HttpStatusCode.OK;
                     var watch = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
+                        var healthCheckMonitor = httpContext.RequestServices.GetService<T>();
                         if (healthCheckMonitor != null)
                         {
                             await _healthCheckFunc.Invoke(healthCheckMonitor);
                         }
-                        _logger.LogInformation("Heartbeat API call returned success. Test took {ExecutionTime} ms.", watch.ElapsedMilliseconds);
+                        watch.Stop();
+                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), HttpStatusCode.OK } }))
+                        {
+                            _logger.LogInformation("Heartbeat API call returned success. Test took {ExecutionTime} ms.",
+                                watch.ElapsedMilliseconds);
+                        }
+                        httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
                     }
                     catch (Exception error)
                     {
-                        _logger.LogError("Heartbeat API call returned failure. Exception message was {ExceptionMessage}", error.Message);
-                        statusCode = HttpStatusCode.InternalServerError;
+                        watch.Stop();
+                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), HttpStatusCode.InternalServerError } }))
+                        {
+                            _logger.LogError(
+                                "Heartbeat API call returned failure. Exception message was {ExceptionMessage}",
+                                error.Message);
+                        }
+                        httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     }
-                    watch.Stop();
-                    httpContext.Response.StatusCode = (int)statusCode;
                 }
                 else
                 {
