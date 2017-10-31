@@ -1,6 +1,30 @@
-# commont-heartbeat-aspnetcore
+# common-heartbeat
 Heartbeat middleware
 
-## Usage
+Intercepts HttpGet requests to /api/heartbeat and executes a registered heartbeatmonitor that runs healthchecks on the system.
+By default it will try to find a registered instance of IHeartbeatMonitor and execute 
 
-app.UseHeartbeat(new HeartbeatOptions().AddApiKey("SECRET"));
+
+Basic usage
+
+```csharp
+using Collector.Common.Heartbeat
+
+app.UseHeartbeat();
+//HeartbeatOptions Default values:
+//ApiKey = null
+//ApiKeyHeaderKey = "DiagnosticsAPIKey"
+//HeartbeatRoute = "/api/heartbeat"
+```
+
+Advanced usage
+```csharp
+using Collector.Common.Heartbeat
+
+app.UseHeartbeat<IHeartbeatMonitor>(monitor => monitor.PerformHealthCheck(), 
+    new HeartbeatOptions()
+      .SetApiKey("SECRET")
+      .SetApiKeyHeaderKey("ApiKeyAuthorization")
+      .SetHeartbeatRoute("/api/custom/heartbeat")
+      );
+```
