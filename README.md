@@ -22,7 +22,7 @@ Advanced usage
 using Collector.Common.Heartbeat
 
 app.UseHeartbeat<IHeartbeatMonitor>(
-	monitor => monitor.PerformHealthCheck(), 
+	monitor => monitor.RunAsync(), 
     new HeartbeatOptions {
 		ApiKey = "Secret",
 		ApiKeyHeaderKey = "ApiKeyAuthorization",
