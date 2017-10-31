@@ -21,10 +21,12 @@ Advanced usage
 ```csharp
 using Collector.Common.Heartbeat
 
-app.UseHeartbeat<IHeartbeatMonitor>(monitor => monitor.PerformHealthCheck(), 
-    new HeartbeatOptions()
-      .SetApiKey("SECRET")
-      .SetApiKeyHeaderKey("ApiKeyAuthorization")
-      .SetHeartbeatRoute("/api/custom/heartbeat")
-      );
+app.UseHeartbeat<IHeartbeatMonitor>(
+	monitor => monitor.PerformHealthCheck(), 
+    new HeartbeatOptions {
+		ApiKey = "Secret",
+		ApiKeyHeaderKey = "ApiKeyAuthorization",
+		HeartbeatRoute = "/api/custom/heartbeat"
+	}
+);
 ```
