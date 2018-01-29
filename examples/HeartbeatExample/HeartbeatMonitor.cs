@@ -7,15 +7,16 @@ namespace HeartbeatExample
     public class HeartbeatMonitor : IHeartbeatMonitor
     {
         private readonly ILogger _logger;
-
+        private ISupportsDiagnostics _component = new SampleComponent();
+        
         public HeartbeatMonitor(ILoggerFactory logger)
         {
             _logger = logger.CreateLogger<HeartbeatMonitor>();
         }
-        public Task RunAsync()
+        public Task<DiagnosticsResults> RunAsync()
         {
-            _logger.LogInformation("Doint stuff");
-            return Task.CompletedTask;
+            _logger.LogInformation("Running diagnostics tests");
+            return DiagnosticsHelper.RunDiagnosticsTests(new [] { _component }, parallel:true);
         }
     }
 }

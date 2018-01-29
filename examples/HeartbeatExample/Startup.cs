@@ -13,6 +13,7 @@ namespace HeartbeatExample
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IHeartbeatMonitor, HeartbeatMonitor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -25,7 +26,7 @@ namespace HeartbeatExample
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHeartbeat<IHeartbeatMonitor>(x => x.RunAsync(), new HeartbeatOptions
+            app.UseHeartbeat<IHeartbeatMonitor,DiagnosticsResults>(x => x.RunAsync(), new HeartbeatOptions
             {
                 ApiKey = "Secret"
             });
