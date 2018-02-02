@@ -16,7 +16,10 @@ namespace Collector.Common.Heartbeat
             ComponentName = componentName;
             Success = true;
             ErrorMessages = new List<string>();
+            DiagnosticsStartTime = DateTime.Now;
         }
+
+        public DateTimeOffset DiagnosticsStartTime { get; set; }
 
         public long ElapsedMilliseconds { get; set; }
 
@@ -38,6 +41,7 @@ namespace Collector.Common.Heartbeat
             Success = componentResults.All(component => component.Success);
             ElapsedSequentialMilliseconds = componentResults.Sum(component => component.ElapsedMilliseconds);
             ElapsedMilliseconds = ElapsedSequentialMilliseconds;
+            DiagnosticsStartTime = DateTime.Now;
         }
 
         public List<DiagnosticsResult> ComponentResults { get; private set; }
@@ -47,6 +51,8 @@ namespace Collector.Common.Heartbeat
         public long ElapsedSequentialMilliseconds { get; private set; }
 
         public long ElapsedMilliseconds { get; set; }
+
+        public DateTimeOffset DiagnosticsStartTime { get; set; }
     }
 
     /// <summary>
@@ -75,6 +81,7 @@ namespace Collector.Common.Heartbeat
         public static async Task<DiagnosticsResults> RunDiagnosticsTests(
             IEnumerable<ISupportsDiagnostics> components, bool parallel)
         {
+            var startTime = DateTime.Now;
             var stopwatch = Stopwatch.StartNew();
             List<DiagnosticsResult> componentResults;
             if (parallel)
@@ -95,7 +102,7 @@ namespace Collector.Common.Heartbeat
                 componentResults = results;
             }
 
-            return new DiagnosticsResults(componentResults) { ElapsedMilliseconds = stopwatch.ElapsedMilliseconds };
+            return new DiagnosticsResults(componentResults) { ElapsedMilliseconds = stopwatch.ElapsedMilliseconds, DiagnosticsStartTime = startTime};
         }
     }
 }
