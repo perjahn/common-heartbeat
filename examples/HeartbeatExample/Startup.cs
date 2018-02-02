@@ -26,7 +26,7 @@ namespace HeartbeatExample
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHeartbeat<IHeartbeatMonitor,DiagnosticsResults>(x => x.RunAsync(), new HeartbeatOptions
+            app.UseHeartbeat<IHeartbeatMonitor>(x => x.RunAsync(), new HeartbeatOptions
             {
                 ApiKey = "Secret"
             });

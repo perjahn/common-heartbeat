@@ -13,7 +13,7 @@ namespace Collector.Common.Heartbeat
         /// <param name="options">Options for heartbeat.</param>
         public static IApplicationBuilder UseHeartbeat(this IApplicationBuilder applicationBuilder, HeartbeatOptions options = null)
         {
-            return applicationBuilder.UseHeartbeat<IHeartbeatMonitor, DiagnosticsResults>(monitor => monitor.RunAsync(), options);
+            return applicationBuilder.UseHeartbeat<IHeartbeatMonitor>(monitor => monitor.RunAsync(), options);
         }
 
         /// <summary>
@@ -24,8 +24,8 @@ namespace Collector.Common.Heartbeat
         /// <param name="applicationBuilder">The <see cref="T:Microsoft.AspNetCore.Builder.IApplicationBuilder" /></param>
         /// <param name="options">Options for heartbeat.</param>
         /// <param name="healthCheckFunc">Function to execute on <see cref="T"/></param>
-        public static IApplicationBuilder UseHeartbeat<T,TR>(this IApplicationBuilder applicationBuilder,
-            Func<T, Task<TR>> healthCheckFunc, HeartbeatOptions options = null)
+        public static IApplicationBuilder UseHeartbeat<T>(this IApplicationBuilder applicationBuilder,
+            Func<T, Task<DiagnosticsResults>> healthCheckFunc, HeartbeatOptions options = null)
         {
             if (applicationBuilder == null)
             {
@@ -41,7 +41,7 @@ namespace Collector.Common.Heartbeat
 
             return applicationBuilder.Map(options.HeartbeatRoute, app =>
             {
-                app.UseMiddleware<HeartbeatMiddleware<T,TR>>(options, healthCheckFunc);
+                app.UseMiddleware<HeartbeatMiddleware<T>>(options, healthCheckFunc);
             });
 
         }

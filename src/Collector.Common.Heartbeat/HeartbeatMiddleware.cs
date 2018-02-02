@@ -12,11 +12,11 @@ using Newtonsoft.Json;
 namespace Collector.Common.Heartbeat
 {
     /// <summary>Represents a middleware that handle heartbeats</summary>
-    public class HeartbeatMiddleware<T,R>
+    public class HeartbeatMiddleware<T>
     {
         private const string HeartbeatScope = "Heartbeat";
         private const string ExecutionTimeScope = "ExecutionTime";
-        private readonly Func<T, Task<R>> _healthCheckFunc;
+        private readonly Func<T, Task<DiagnosticsResults>> _healthCheckFunc;
         private readonly RequestDelegate _next;
         private readonly HeartbeatOptions _options;
         private readonly ILogger _logger;
@@ -28,10 +28,10 @@ namespace Collector.Common.Heartbeat
         /// <param name="loggerFactory">The Logger to use.</param>
         /// <param name="options">The middleware options.</param>
         /// <param name="healthCheckFunc">The <see cref="Func{T, TResult}"/> to excute on <see cref="T"/>.</param>
-        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task<R>> healthCheckFunc)
+        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task<DiagnosticsResults>> healthCheckFunc)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
-            _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T,R>)) ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T>)) ?? throw new ArgumentNullException(nameof(loggerFactory));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _healthCheckFunc = healthCheckFunc ?? throw new ArgumentNullException(nameof(healthCheckFunc));
         }
@@ -64,11 +64,11 @@ namespace Collector.Common.Heartbeat
                     var watch = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
-                        var result = default(R);
+                        DiagnosticsResults result = null;
                         var heartbeatMonitor = httpContext.RequestServices.GetService<T>();
                         if (heartbeatMonitor != null)
                         {
-                            result = await _healthCheckFunc.Invoke(heartbeatMonitor);
+                            result = await _healthCheckFunc(heartbeatMonitor);
                         }
                         else
                         {
