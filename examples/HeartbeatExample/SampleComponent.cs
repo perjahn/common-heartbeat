@@ -6,7 +6,7 @@ using Collector.Common.Heartbeat;
 
 namespace HeartbeatExample
 {
-    public class SampleComponent : ISupportsDiagnostics
+    public class SampleComponent
 
     {
         private int _i = 0;

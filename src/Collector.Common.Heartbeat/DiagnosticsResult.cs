@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Collector.Common.Heartbeat
 {
     /// <summary>
-    /// Data collected from an invokation of ISupportsDiagnostics.PerformHealthCheckAsync
+    /// Data collected from an invokation of a test action
     /// </summary>
     public class DiagnosticsResult
     {
@@ -55,18 +56,19 @@ namespace Collector.Common.Heartbeat
         public DateTimeOffset DiagnosticsStartTime { get; set; }
     }
 
+
     /// <summary>
     /// Utility class to make it easy to invoke components that implements ISupportsDiagnostics and to collect the result
     /// </summary>
     public static class DiagnosticsHelper
     {
-        public static async Task<DiagnosticsResult> RunDiagnosticsTest(ISupportsDiagnostics component)
+        public static async Task<DiagnosticsResult> RunDiagnosticsTest(Func<Task> testAction)
         {
             var stopWatch = Stopwatch.StartNew();
-            var result = new DiagnosticsResult(component.GetType().ToString());
+            var result = new DiagnosticsResult(testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "anonymous");
             try
             {
-                await component.PerformHealthCheckAsync();
+                await testAction();
             }
             catch (Exception error)
             {
@@ -79,23 +81,23 @@ namespace Collector.Common.Heartbeat
         }
 
         public static async Task<DiagnosticsResults> RunDiagnosticsTests(
-            IEnumerable<ISupportsDiagnostics> components, bool parallel)
+            IEnumerable<Func<Task>> testActions, bool parallel)
         {
             var startTime = DateTime.Now;
             var stopwatch = Stopwatch.StartNew();
             List<DiagnosticsResult> componentResults;
             if (parallel)
             {
-                var testTasks = components.Select(RunDiagnosticsTest).ToList();
+                var testTasks = testActions.Select(RunDiagnosticsTest).ToList();
                 await Task.WhenAll(testTasks);
                 componentResults = testTasks.Select(testTask => testTask.Result).ToList();
             }
             else
             {
                 var results = new List<DiagnosticsResult>();
-                foreach (var component in components)
+                foreach (var testAction in testActions)
                 {
-                    var result = await RunDiagnosticsTest(component);
+                    var result = await RunDiagnosticsTest(testAction);
                     results.Add(result);
                 }
 

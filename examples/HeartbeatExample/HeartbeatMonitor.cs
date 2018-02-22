@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Collector.Common.Heartbeat;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,7 @@ namespace HeartbeatExample
     public class HeartbeatMonitor : IHeartbeatMonitor
     {
         private readonly ILogger _logger;
-        private ISupportsDiagnostics _component = new SampleComponent();
+        private SampleComponent _component = new SampleComponent();
         
         public HeartbeatMonitor(ILoggerFactory logger)
         {
@@ -16,7 +17,7 @@ namespace HeartbeatExample
         public Task<DiagnosticsResults> RunAsync()
         {
             _logger.LogInformation("Running diagnostics tests");
-            return DiagnosticsHelper.RunDiagnosticsTests(new [] { _component }, parallel:true);
+            return DiagnosticsHelper.RunDiagnosticsTests(new [] { (Func<Task>)_component.PerformHealthCheckAsync }, parallel:true);
         }
     }
 }
