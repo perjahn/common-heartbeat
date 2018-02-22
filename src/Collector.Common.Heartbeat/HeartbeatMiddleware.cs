@@ -75,12 +75,22 @@ namespace Collector.Common.Heartbeat
                             _logger.LogError("Failed to resolve heartbeat monitor");
                         }
                         watch.Stop();
-                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), HttpStatusCode.OK } }))
+
+                        HttpStatusCode responseCode = result != null && result.Success ? HttpStatusCode.OK : HttpStatusCode.InternalServerError;                        
+                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), responseCode } }))
                         {
-                            _logger.LogInformation("Heartbeat API call returned success. Test took {ExecutionTime} ms.",
-                                watch.ElapsedMilliseconds);
+                            if (responseCode == HttpStatusCode.OK)
+                            {
+                                _logger.LogInformation("Heartbeat API call returned success. Test took {ElapsedMilliseconds} ms.", watch.ElapsedMilliseconds);
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Heartbeat API call returned failure. Test took {ElapsedMilliseconds} ms.", watch.ElapsedMilliseconds);
+                            }
                         }
-                        httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+
+                        httpContext.Response.StatusCode = (int)responseCode;
+
                         if (result != null)
                         {
                             httpContext.Response.ContentType = "application/json";
