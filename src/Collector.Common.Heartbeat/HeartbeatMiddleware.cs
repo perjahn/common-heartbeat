@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Collector.Common.Heartbeat
 {
@@ -14,7 +16,7 @@ namespace Collector.Common.Heartbeat
     {
         private const string HeartbeatScope = "Heartbeat";
         private const string ExecutionTimeScope = "ExecutionTime";
-        private readonly Func<T, Task> _healthCheckFunc;
+        private readonly Func<T, Task<DiagnosticsResults>> _healthCheckFunc;
         private readonly RequestDelegate _next;
         private readonly HeartbeatOptions _options;
         private readonly ILogger _logger;
@@ -26,7 +28,7 @@ namespace Collector.Common.Heartbeat
         /// <param name="loggerFactory">The Logger to use.</param>
         /// <param name="options">The middleware options.</param>
         /// <param name="healthCheckFunc">The <see cref="Func{T, TResult}"/> to excute on <see cref="T"/>.</param>
-        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task> healthCheckFunc)
+        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task<DiagnosticsResults>> healthCheckFunc)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
             _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T>)) ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -62,10 +64,15 @@ namespace Collector.Common.Heartbeat
                     var watch = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
-                        var healthCheckMonitor = httpContext.RequestServices.GetService<T>();
-                        if (healthCheckMonitor != null)
+                        DiagnosticsResults result = null;
+                        var heartbeatMonitor = httpContext.RequestServices.GetService<T>();
+                        if (heartbeatMonitor != null)
                         {
-                            await _healthCheckFunc.Invoke(healthCheckMonitor);
+                            result = await _healthCheckFunc(heartbeatMonitor);
+                        }
+                        else
+                        {
+                            _logger.LogError("Failed to resolve heartbeat monitor");
                         }
                         watch.Stop();
                         using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), HttpStatusCode.OK } }))
@@ -74,6 +81,11 @@ namespace Collector.Common.Heartbeat
                                 watch.ElapsedMilliseconds);
                         }
                         httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+                        if (result != null)
+                        {
+                            httpContext.Response.ContentType = "application/json";
+                            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(result));
+                        }
                     }
                     catch (Exception error)
                     {

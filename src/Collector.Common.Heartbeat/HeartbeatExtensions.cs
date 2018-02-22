@@ -20,11 +20,12 @@ namespace Collector.Common.Heartbeat
         /// Will register a heartbeat route endpoint and run health check
         /// </summary>
         /// <typeparam name="T">Type of the health monitor</typeparam>
+        /// <typeparam name="TR">Type of the health monitor invokation result type</typeparam>
         /// <param name="applicationBuilder">The <see cref="T:Microsoft.AspNetCore.Builder.IApplicationBuilder" /></param>
         /// <param name="options">Options for heartbeat.</param>
         /// <param name="healthCheckFunc">Function to execute on <see cref="T"/></param>
         public static IApplicationBuilder UseHeartbeat<T>(this IApplicationBuilder applicationBuilder,
-            Func<T, Task> healthCheckFunc, HeartbeatOptions options = null)
+            Func<T, Task<DiagnosticsResults>> healthCheckFunc, HeartbeatOptions options = null)
         {
             if (applicationBuilder == null)
             {

@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Collector.Common.Heartbeat
 {
     public interface IHeartbeatMonitor
     {
-        Task RunAsync();
+        Task<DiagnosticsResults> RunAsync();
     }
 }
