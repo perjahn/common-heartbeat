@@ -65,7 +65,7 @@ namespace Collector.Common.Heartbeat
         public static async Task<DiagnosticsResult> RunDiagnosticsTest(Func<Task> testAction)
         {
             var stopWatch = Stopwatch.StartNew();
-            var result = new DiagnosticsResult(testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "anonymous");
+            var result = new DiagnosticsResult(GetDescriptiveNameFromTestAction(testAction));
             try
             {
                 await testAction();
@@ -105,6 +105,13 @@ namespace Collector.Common.Heartbeat
             }
 
             return new DiagnosticsResults(componentResults) { ElapsedMilliseconds = stopwatch.ElapsedMilliseconds, DiagnosticsStartTime = startTime};
+        }
+
+        private static string GetDescriptiveNameFromTestAction(Func<Task> testAction)
+        {
+            string className = testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "[]";
+            string methodName = testAction.GetMethodInfo()?.Name ?? "[]";
+            return className + "." + methodName;
         }
     }
 }
