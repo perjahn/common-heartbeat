@@ -26,9 +26,11 @@ namespace HeartbeatExample
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHeartbeat<IHeartbeatMonitor>(x => x.RunAsync(), new HeartbeatOptions
+            app.UseHeartbeat<IHeartbeatMonitor>(x => x.RunAsync(), options =>
             {
-                ApiKey = "Secret"
+                options.ApiKey = "Secret"; // Default = string.Empty / None
+                //options.ApiKeyHeaderKey = "SomeHeaderName"; // Default = "DiagnosticsAPIKey"
+                //options.HeartbeatRoute = "/api/otherroute"; // Default = "/api/heartbeat"
             });
 
             app.Run(async (context) =>

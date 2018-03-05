@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -17,21 +17,23 @@ namespace Collector.Common.Heartbeat
         private const string HeartbeatScope = "Heartbeat";
         private const string ExecutionTimeScope = "ExecutionTime";
         private readonly Func<T, Task<DiagnosticsResults>> _healthCheckFunc;
+        private readonly ILogger _logger;
         private readonly RequestDelegate _next;
         private readonly HeartbeatOptions _options;
-        private readonly ILogger _logger;
 
         /// <summary>
-        /// Creates a new instance of <see cref="T:Collector.Common.Heartbeat.HeartbeatMiddleware" />
+        ///     Creates a new instance of <see cref="T:Collector.Common.Heartbeat.HeartbeatMiddleware" />
         /// </summary>
         /// <param name="next">The delegate representing the next middleware in the request pipeline.</param>
         /// <param name="loggerFactory">The Logger to use.</param>
         /// <param name="options">The middleware options.</param>
-        /// <param name="healthCheckFunc">The <see cref="Func{T, TResult}"/> to excute on <see cref="T"/>.</param>
-        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options, Func<T, Task<DiagnosticsResults>> healthCheckFunc)
+        /// <param name="healthCheckFunc">The <see cref="Func{T, TResult}" /> to excute on <see cref="T" />.</param>
+        public HeartbeatMiddleware(RequestDelegate next, ILoggerFactory loggerFactory, HeartbeatOptions options,
+            Func<T, Task<DiagnosticsResults>> healthCheckFunc)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
-            _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T>)) ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _logger = loggerFactory?.CreateLogger(typeof(HeartbeatMiddleware<T>)) ??
+                      throw new ArgumentNullException(nameof(loggerFactory));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _healthCheckFunc = healthCheckFunc ?? throw new ArgumentNullException(nameof(healthCheckFunc));
         }
@@ -45,13 +47,9 @@ namespace Collector.Common.Heartbeat
                 throw new ArgumentNullException(nameof(httpContext));
 
             if (httpContext.Request.Method.Equals(HttpMethod.Get.Method, StringComparison.OrdinalIgnoreCase))
-            {
                 await InvokeHeartbeat(httpContext);
-            }
             else
-            {
                 await _next.Invoke(httpContext);
-            }
         }
 
         private async Task InvokeHeartbeat(HttpContext httpContext)
@@ -61,51 +59,59 @@ namespace Collector.Common.Heartbeat
                 var actualKey = httpContext.Request.Headers[_options.ApiKeyHeaderKey];
                 if (IsAuthorizedRequest(_options.ApiKey, actualKey))
                 {
-                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    var watch = Stopwatch.StartNew();
                     try
                     {
                         DiagnosticsResults result = null;
                         var heartbeatMonitor = httpContext.RequestServices.GetService<T>();
                         if (heartbeatMonitor != null)
-                        {
                             result = await _healthCheckFunc(heartbeatMonitor);
-                        }
                         else
-                        {
-                            _logger.LogError("Failed to resolve heartbeat monitor");
-                        }
+                            _logger.LogInformation("No heartbeat monitor registered.");
                         watch.Stop();
 
-                        HttpStatusCode responseCode = result != null && result.Success ? HttpStatusCode.OK : HttpStatusCode.InternalServerError;                        
-                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), responseCode } }))
+                        var responseCode = result != null && result.Success
+                            ? HttpStatusCode.OK
+                            : HttpStatusCode.InternalServerError;
+                        using (_logger.BeginScope(new Dictionary<string, object>
+                        {
+                            {ExecutionTimeScope, watch.Elapsed},
+                            {nameof(HttpStatusCode), responseCode}
+                        }))
                         {
                             if (responseCode == HttpStatusCode.OK)
-                            {
-                                _logger.LogInformation("Heartbeat API call returned success. Test took {ElapsedMilliseconds} ms.", watch.ElapsedMilliseconds);
-                            }
+                                _logger.LogInformation(
+                                    "Heartbeat API call returned success. Test took {ElapsedMilliseconds} ms.",
+                                    watch.ElapsedMilliseconds);
                             else
-                            {
-                                _logger.LogInformation("Heartbeat API call returned failure. Test took {ElapsedMilliseconds} ms.", watch.ElapsedMilliseconds);
-                            }
+                                _logger.LogInformation(
+                                    "Heartbeat API call returned failure. Test took {ElapsedMilliseconds} ms.",
+                                    watch.ElapsedMilliseconds);
                         }
 
                         httpContext.Response.StatusCode = (int)responseCode;
-
-                        if (result != null)
+                        if (result == null)
                         {
-                            httpContext.Response.ContentType = "application/json";
-                            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(result));
+                            result = new DiagnosticsResults(new List<DiagnosticsResult>());
                         }
+                        result.ProcessInformation = GetProcessInformation();
+                        httpContext.Response.ContentType = "application/json";
+                        await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(result));
                     }
                     catch (Exception error)
                     {
                         watch.Stop();
-                        using (_logger.BeginScope(new Dictionary<string, object> { { ExecutionTimeScope, watch.Elapsed }, { nameof(HttpStatusCode), HttpStatusCode.InternalServerError } }))
+                        using (_logger.BeginScope(new Dictionary<string, object>
+                        {
+                            {ExecutionTimeScope, watch.Elapsed},
+                            {nameof(HttpStatusCode), HttpStatusCode.InternalServerError}
+                        }))
                         {
                             _logger.LogError(
                                 "Heartbeat API call returned failure. Exception message was {ExceptionMessage}",
                                 error.Message);
                         }
+
                         httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     }
                 }
@@ -116,14 +122,20 @@ namespace Collector.Common.Heartbeat
             }
         }
 
-        private static bool IsAuthorizedRequest(string apiKey, string actualKey)
+        private static ProcessInformation GetProcessInformation()
         {
-            if (string.IsNullOrWhiteSpace(apiKey))
+            var currentProcess = Process.GetCurrentProcess();
+            return new ProcessInformation
             {
-                return true;
-            }
-            return apiKey.Equals(actualKey);
+                StartTime = currentProcess.StartTime,
+                Uptime = DateTime.Now.Subtract(currentProcess.StartTime)
+            };
         }
 
+        private static bool IsAuthorizedRequest(string apiKey, string actualKey)
+        {
+            if (string.IsNullOrWhiteSpace(apiKey)) return true;
+            return apiKey.Equals(actualKey);
+        }
     }
 }
