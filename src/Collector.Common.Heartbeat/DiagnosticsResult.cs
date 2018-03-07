@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Collector.Common.Heartbeat
 {
     /// <summary>
-    /// Data collected from an invokation of a test action
+    ///     Data collected from an invokation of a test action
     /// </summary>
     public class DiagnosticsResult
     {
@@ -32,33 +32,40 @@ namespace Collector.Common.Heartbeat
     }
 
     /// <summary>
-    /// Aggregation of multiple DiagnosticsResult
+    ///     Aggregation of multiple DiagnosticsResult
     /// </summary>
     public class DiagnosticsResults
     {
         public DiagnosticsResults(List<DiagnosticsResult> componentResults)
         {
             ComponentResults = componentResults;
-            Success = componentResults.All(component => component.Success);
+            Success = componentResults.Count == 0 || componentResults.All(component => component.Success);
             ElapsedSequentialMilliseconds = componentResults.Sum(component => component.ElapsedMilliseconds);
             ElapsedMilliseconds = ElapsedSequentialMilliseconds;
-            DiagnosticsStartTime = DateTime.Now;
+            DiagnosticsStartTime = DateTimeOffset.Now;
         }
 
-        public List<DiagnosticsResult> ComponentResults { get; private set; }
+        public List<DiagnosticsResult> ComponentResults { get; }
 
-        public bool Success { get; private set; }
+        public bool Success { get; }
 
-        public long ElapsedSequentialMilliseconds { get; private set; }
+        public long ElapsedSequentialMilliseconds { get; }
 
         public long ElapsedMilliseconds { get; set; }
 
         public DateTimeOffset DiagnosticsStartTime { get; set; }
+        public ProcessInformation ProcessInformation { get; set; }
+    }
+
+    public class ProcessInformation
+    {
+        public TimeSpan Uptime { get; set; }
+        public DateTime StartTime { get; set; }
     }
 
 
     /// <summary>
-    /// Utility class to make it easy to invoke components that implements ISupportsDiagnostics and to collect the result
+    ///     Utility class to make it easy to invoke components that implements ISupportsDiagnostics and to collect the result
     /// </summary>
     public static class DiagnosticsHelper
     {
@@ -104,13 +111,17 @@ namespace Collector.Common.Heartbeat
                 componentResults = results;
             }
 
-            return new DiagnosticsResults(componentResults) { ElapsedMilliseconds = stopwatch.ElapsedMilliseconds, DiagnosticsStartTime = startTime};
+            return new DiagnosticsResults(componentResults)
+            {
+                ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
+                DiagnosticsStartTime = startTime
+            };
         }
 
         private static string GetDescriptiveNameFromTestAction(Func<Task> testAction)
         {
-            string className = testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "[]";
-            string methodName = testAction.GetMethodInfo()?.Name ?? "[]";
+            var className = testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "[]";
+            var methodName = testAction.GetMethodInfo()?.Name ?? "[]";
             return className + "." + methodName;
         }
     }
