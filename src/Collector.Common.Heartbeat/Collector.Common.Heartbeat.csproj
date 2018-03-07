@@ -10,7 +10,7 @@
     <Version>2.1.0</Version>
     <RepositoryUrl>https://github.com/collector-bank/common-heartbeat</RepositoryUrl>
     <PackageProjectUrl>https://github.com/collector-bank/common-heartbeat</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/collector-bank/common-heartbeat/master/icon.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/collector-bank/common-heartbeat/master/heartbeat.png</PackageIconUrl>
     <Product />
   </PropertyGroup>
 
