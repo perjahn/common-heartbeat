@@ -59,7 +59,7 @@ namespace Collector.Common.Heartbeat
 
     public class ProcessInformation
     {
-        public TimeSpan Uptime { get; set; }
+        public long UptimeMilliseconds { get; set; }
         public DateTime StartTime { get; set; }
     }
 

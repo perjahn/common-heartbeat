@@ -128,7 +128,7 @@ namespace Collector.Common.Heartbeat
             return new ProcessInformation
             {
                 StartTime = currentProcess.StartTime,
-                Uptime = DateTime.Now.Subtract(currentProcess.StartTime)
+                UptimeMilliseconds = (long)DateTime.Now.Subtract(currentProcess.StartTime).TotalMilliseconds
             };
         }
 
