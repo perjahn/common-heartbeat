@@ -118,11 +118,17 @@ namespace Collector.Common.Heartbeat
             };
         }
 
+        private static string TrimGenericTypeName(string typeName)
+        {
+            var i = typeName.IndexOf("`");
+            return i >= 0 ? typeName.Substring(0, i) : typeName;
+        }
+
         private static string GetDescriptiveNameFromTestAction(Func<Task> testAction)
         {
-            var className = testAction.GetMethodInfo()?.DeclaringType?.ToString() ?? "[]";
-            var methodName = testAction.GetMethodInfo()?.Name ?? "[]";
-            return className + "." + methodName;
+            var className = TrimGenericTypeName(testAction.GetMethodInfo()?.DeclaringType?.Name);
+            var methodName = testAction.GetMethodInfo()?.Name;
+            return string.Join(".", new[] { className, methodName }.Where(x => x != null));
         }
     }
 }
