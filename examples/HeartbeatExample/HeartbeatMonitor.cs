@@ -16,6 +16,7 @@ namespace HeartbeatExample
         {
             _logger = logger.CreateLogger<HeartbeatMonitor>();
         }
+
         public Task<DiagnosticsResults> RunAsync()
         {
             _logger.LogInformation("Running diagnostics tests");
